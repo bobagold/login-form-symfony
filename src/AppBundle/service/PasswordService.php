@@ -26,16 +26,17 @@ class PasswordService
         $this->em->flush();
     }
 
-    public function generateConfirmationHash(User $user)
+    public function generateConfirmationHash(User $user, $generator = 'uniqid')
     {
-        $this->em->transactional(function () use ($user) {
+        $confirmationHash = '';
+        $this->em->transactional(function () use ($user, $generator, &$confirmationHash) {
             do {
-                $confirmationHash = uniqid();
+                $confirmationHash = $generator();
             } while ($this->findUserByConfirmationHash($confirmationHash));
             $user->setConfirmationHash($confirmationHash);
             $this->em->persist($user);
         });
-        return $user->getConfirmationHash();
+        return $confirmationHash;
     }
 
     public function findUserByConfirmationHash($hash)
