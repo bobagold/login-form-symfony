@@ -27,9 +27,13 @@ class PasswordService
 
     public function generateConfirmationHash(User $user)
     {
-        $user->setConfirmationHash(uniqid());
-        $this->em->persist($user);
-        $this->em->flush();
+        $this->em->transactional(function () use ($user) {
+            do {
+                $confirmationHash = uniqid();
+            } while ($this->findUserByConfirmationHash($confirmationHash));
+            $user->setConfirmationHash($confirmationHash);
+            $this->em->persist($user);
+        });
         return $user->getConfirmationHash();
     }
 
