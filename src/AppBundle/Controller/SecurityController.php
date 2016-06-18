@@ -2,7 +2,6 @@
 namespace AppBundle\Controller;
 
 use AppBundle\Entity\User;
-use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -12,7 +11,6 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
-use Symfony\Component\Security\Core\Encoder\EncoderFactoryInterface;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -55,13 +53,12 @@ class SecurityController extends Controller
         if ($form->isSubmitted() && $form->isValid()) {
             $email = $form->get('email')->getData();
 
-            $em = $this->getDoctrine()->getManager();
-
-            $users = $em->getRepository('AppBundle:User')->findBy(['email' => $email]);
-            if (!$users) {
+            $user = $this->get('app.password_service')->findUserByEmail($email);
+            if (!$user) {
                 $form->get('email')->addError(new FormError('email not found'));
             } else {
-                $this->resetPassword($email, $users[0]);
+                $this->resetPassword($email, $user);
+
                 return $this->redirectToRoute('login', ['message' => 'password_reset']);
             }
         }
@@ -78,9 +75,7 @@ class SecurityController extends Controller
      */
     public function passwordResetConfirmAction($hash, Request $request)
     {
-        $em = $this->getDoctrine()->getManager();
-
-        $user = $this->findUserByConfirmationHash($em, $hash);
+        $user = $this->get('app.password_service')->findUserByConfirmationHash($hash);
         if (!$user) {
             return $this->redirectToRoute('login');
         }
@@ -108,7 +103,7 @@ class SecurityController extends Controller
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->savePassword(
+            $this->get('app.password_service')->savePassword(
                 $form->get('password')->getData(),
                 $this->get('security.encoder_factory'),
                 $this->get('security.token_storage')->getToken()->getUser()
@@ -125,42 +120,17 @@ class SecurityController extends Controller
 
     private function resetPassword($email, User $user)
     {
-        $em = $this->getDoctrine()->getManager();
         $message = \Swift_Message::newInstance()
-            ->setSubject('Hello Email')
-            ->setFrom('vgold@xiag.ch')
-            ->setTo('vgold@xiag.ch')
+            ->setSubject($this->getParameter('password_restore_subject'))
+            ->setFrom($this->getParameter('mailer_from'))
+            ->setTo($email)
             ->setBody(
                 $this->renderView(
                     'emails/forgot_password.html.twig',
-                    array('name' => $email, 'hash' => $this->generateConfirmationHash($em, $user))
+                    array('hash' => $this->get('app.password_service')->generateConfirmationHash($user))
                 ),
                 'text/html'
-            )
-        ;
+            );
         $this->get('mailer')->send($message);
-    }
-
-    private function savePassword($password, EncoderFactoryInterface $encoder, User $user)
-    {
-        $user->setPassword($encoder->getEncoder($user)->encodePassword($password, null));
-        $em = $this->getDoctrine()->getManager();
-        $em->persist($user);
-        $em->flush();
-    }
-
-    private function generateConfirmationHash(EntityManager $em, User $user)
-    {
-        $user->setConfirmationHash(uniqid());
-        $em = $this->getDoctrine()->getManager();
-        $em->persist($user);
-        $em->flush();
-        return $user->getConfirmationHash();
-    }
-
-    private function findUserByConfirmationHash(EntityManager $em, $hash)
-    {
-        $users = $em->getRepository('AppBundle:User')->findBy(['confirmation_hash' => $hash]);
-        return $users ? $users[0] : null;
     }
 }
