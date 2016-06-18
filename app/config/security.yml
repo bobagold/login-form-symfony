@@ -23,6 +23,7 @@ security:
             form_login:
                 login_path: login
                 check_path: login
+                csrf_token_generator: security.csrf.token_manager
             # http://symfony.com/doc/current/cookbook/security/form_login_setup.html
     access_control:
         - { path: ^/login, roles: IS_AUTHENTICATED_ANONYMOUSLY }
