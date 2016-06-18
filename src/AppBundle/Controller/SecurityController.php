@@ -31,11 +31,11 @@ class SecurityController extends Controller
 
         return $this->render(
             'security/login.html.twig',
-            array(
+            [
                 // last username entered by the user
                 'last_username' => $lastUsername,
                 'error'         => $error,
-            )
+            ]
         );
     }
 
@@ -46,7 +46,7 @@ class SecurityController extends Controller
     {
         $form = $this->createFormBuilder()
             ->add('email', EmailType::class, ['constraints' => [new NotBlank, new Email]])
-            ->add('send', SubmitType::class, array('label' => 'Reset password'))
+            ->add('send', SubmitType::class, ['label' => 'Reset password'])
             ->getForm();
         $form->handleRequest($request);
 
@@ -64,9 +64,9 @@ class SecurityController extends Controller
         }
         return $this->render(
             'security/password_restore.html.twig',
-            array(
+            [
                 'form' => $form->createView()
-            )
+            ]
         );
     }
 
@@ -90,15 +90,15 @@ class SecurityController extends Controller
     public function passwordChangeAction(Request $request)
     {
         $form = $this->createFormBuilder()
-            ->add('password', RepeatedType::class, array(
+            ->add('password', RepeatedType::class, [
                 'type' => PasswordType::class,
                 'invalid_message' => 'The password fields must match.',
-                'options' => array('attr' => array('class' => 'password-field'), 'constraints' => [new NotBlank()]),
+                'options' => ['attr' => ['class' => 'password-field'], 'constraints' => [new NotBlank()]],
                 'required' => true,
-                'first_options'  => array('label' => 'Password'),
-                'second_options' => array('label' => 'Repeat Password'),
-            ), ['constraints' => [new NotBlank()]])
-            ->add('save', SubmitType::class, array('label' => 'Submit'))
+                'first_options'  => ['label' => 'Password'],
+                'second_options' => ['label' => 'Repeat Password'],
+            ], ['constraints' => [new NotBlank()]])
+            ->add('save', SubmitType::class, ['label' => 'Submit'])
             ->getForm();
         $form->handleRequest($request);
 
@@ -112,9 +112,9 @@ class SecurityController extends Controller
         }
         return $this->render(
             'security/password_change.html.twig',
-            array(
+            [
                 'form' => $form->createView()
-            )
+            ]
         );
     }
 
@@ -127,7 +127,7 @@ class SecurityController extends Controller
             ->setBody(
                 $this->renderView(
                     'emails/forgot_password.html.twig',
-                    array('hash' => $this->get('app.password_service')->generateConfirmationHash($user))
+                    ['hash' => $this->get('app.password_service')->generateConfirmationHash($user)]
                 ),
                 'text/html'
             );
