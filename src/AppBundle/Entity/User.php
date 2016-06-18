@@ -40,6 +40,11 @@ class User implements UserInterface, \Serializable
      */
     private $isActive;
 
+    /**
+     * @ORM\Column(type="string", length=60, nullable=true)
+     */
+    private $confirmation_hash;
+
     public function __construct()
     {
         $this->isActive = true;
@@ -181,5 +186,29 @@ class User implements UserInterface, \Serializable
     public function getIsActive()
     {
         return $this->isActive;
+    }
+
+    /**
+     * Set confirmationHash
+     *
+     * @param string $confirmationHash
+     *
+     * @return User
+     */
+    public function setConfirmationHash($confirmationHash)
+    {
+        $this->confirmation_hash = $confirmationHash;
+
+        return $this;
+    }
+
+    /**
+     * Get confirmationHash
+     *
+     * @return string
+     */
+    public function getConfirmationHash()
+    {
+        return $this->confirmation_hash;
     }
 }

@@ -81,6 +81,9 @@ class SecurityController extends Controller
         $em = $this->getDoctrine()->getManager();
 
         $user = $this->findUserByConfirmationHash($em, $hash);
+        if (!$user) {
+            return $this->redirectToRoute('login');
+        }
         $token = new UsernamePasswordToken($user, '', 'password_reset', ['ROLE_USER']);
         $this->get('security.token_storage')->setToken($token);
         return $this->redirectToRoute('password_change');
@@ -122,6 +125,7 @@ class SecurityController extends Controller
 
     private function resetPassword($email, User $user)
     {
+        $em = $this->getDoctrine()->getManager();
         $message = \Swift_Message::newInstance()
             ->setSubject('Hello Email')
             ->setFrom('vgold@xiag.ch')
@@ -129,7 +133,7 @@ class SecurityController extends Controller
             ->setBody(
                 $this->renderView(
                     'emails/forgot_password.html.twig',
-                    array('name' => $email, 'hash' => $this->generateConfirmationHash($user))
+                    array('name' => $email, 'hash' => $this->generateConfirmationHash($em, $user))
                 ),
                 'text/html'
             )
@@ -145,14 +149,18 @@ class SecurityController extends Controller
         $em->flush();
     }
 
-    private function generateConfirmationHash(User $user)
+    private function generateConfirmationHash(EntityManager $em, User $user)
     {
-        return 'asdasd';
+        $user->setConfirmationHash(uniqid());
+        $em = $this->getDoctrine()->getManager();
+        $em->persist($user);
+        $em->flush();
+        return $user->getConfirmationHash();
     }
 
     private function findUserByConfirmationHash(EntityManager $em, $hash)
     {
-        $user = $em->getRepository('AppBundle:User')->find(2);
-        return $user;
+        $users = $em->getRepository('AppBundle:User')->findBy(['confirmation_hash' => $hash]);
+        return $users ? $users[0] : null;
     }
 }
