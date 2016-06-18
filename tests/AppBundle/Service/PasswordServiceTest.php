@@ -54,6 +54,15 @@ class PasswordServiceTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('bbb', $service->generateConfirmationHash($user, [$generator, 'generate']));
     }
 
+    public function testCreateUser()
+    {
+        $service = new PasswordService($this->createDoctrine(function () {}));
+        $user = $service->createUser('test@domain');
+        $this->assertEquals('test@domain', $user->getUsername());
+        $this->assertEquals('test@domain', $user->getEmail());
+        $this->assertNotEmpty($user->getPassword());
+    }
+
     /**
      * @param $setUpEm
      * @return \Doctrine\Bundle\DoctrineBundle\Registry

@@ -7,6 +7,7 @@ use Symfony\Component\Form\Extension\Core\Type\EmailType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
@@ -35,6 +36,7 @@ class SecurityController extends Controller
                 // last username entered by the user
                 'last_username' => $lastUsername,
                 'error'         => $error,
+                'message'       => $request->query->get('message')
             ]
         );
     }
@@ -57,9 +59,43 @@ class SecurityController extends Controller
             if (!$user) {
                 $form->get('email')->addError(new FormError('email not found'));
             } else {
-                $this->resetPassword($email, $user);
+                $subject = $this->getParameter('password_restore_subject');
+                $this->resetPassword($email, $user, $subject, 'emails/forgot_password.html.twig');
 
                 return $this->redirectToRoute('login', ['message' => 'password_reset']);
+            }
+        }
+        return $this->render(
+            'security/password_restore.html.twig',
+            [
+                'form' => $form->createView()
+            ]
+        );
+    }
+
+    /**
+     * @Route("/register", name="register")
+     */
+    public function registerAction(Request $request)
+    {
+        $form = $this->createFormBuilder()
+            ->add('email', EmailType::class, ['constraints' => [new NotBlank, new Email]])
+            ->add('send', SubmitType::class, ['label' => 'register'])
+            ->getForm();
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $email = $form->get('email')->getData();
+
+            $user = $this->get('app.password_service')->findUserByEmail($email);
+            if ($user) {
+                $form->get('email')->addError(new FormError('email already registered'));
+            } else {
+                $user = $this->get('app.password_service')->createUser($email);
+                $subject = $this->getParameter('complete_registration_subject');
+                $this->resetPassword($email, $user, $subject, 'emails/confirm_email.html.twig');
+
+                return $this->redirectToRoute('login', ['message' => 'confirm_email']);
             }
         }
         return $this->render(
@@ -118,15 +154,15 @@ class SecurityController extends Controller
         );
     }
 
-    private function resetPassword($email, User $user)
+    private function resetPassword($email, User $user, $subject, $template)
     {
         $message = \Swift_Message::newInstance()
-            ->setSubject($this->getParameter('password_restore_subject'))
+            ->setSubject($subject)
             ->setFrom($this->getParameter('mailer_from'))
             ->setTo($email)
             ->setBody(
                 $this->renderView(
-                    'emails/forgot_password.html.twig',
+                    $template,
                     ['hash' => $this->get('app.password_service')->generateConfirmationHash($user)]
                 ),
                 'text/html'

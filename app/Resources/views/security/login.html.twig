@@ -2,6 +2,14 @@
 
 {% block body %}
 
+{% if message == 'password_reset' %}
+    <div>Please follow instruction from email to create new password</div>
+{% endif %}
+
+{% if message == 'confirm_email' %}
+    <div>Please follow instruction from email to complete registration</div>
+{% endif %}
+
 {% if error %}
     <div>{{ error.messageKey|trans(error.messageData, 'security') }}</div>
 {% endif %}
@@ -26,5 +34,7 @@
 </form>
 
 <a href="{{ path('password_restore') }}">Forgot password?</a>
+
+<a href="{{ path('register') }}">Register</a>
 
 {% endblock %}

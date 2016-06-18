@@ -17,6 +17,7 @@ parameters:
     mailer_from:       ~
 
     password_restore_subject: Password restore
+    complete_registration_subject: Complete registration
 
     # A secret key that's used to generate certain security-related tokens
     secret:            ThisTokenIsNotSoSecretChangeIt

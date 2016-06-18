@@ -50,4 +50,13 @@ class PasswordService
         $users = $this->em->getRepository('AppBundle:User')->findBy(['email' => $email]);
         return $users ? $users[0] : null;
     }
+
+    public function createUser($email)
+    {
+        $user = new User();
+        $user->setUsername($email);
+        $user->setEmail($email);
+        $user->setPassword('-');
+        return $user;
+    }
 }

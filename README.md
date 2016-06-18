@@ -1,4 +1,9 @@
 login-form
 ==========
 
-A Symfony project created on June 18, 2016, 5:28 am.
+Installation:
+
+    composer install
+    php bin/console doctrine:schema:create
+    phpunit
+    php bin/console server:start
