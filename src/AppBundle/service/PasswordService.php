@@ -21,6 +21,7 @@ class PasswordService
     public function savePassword($password, EncoderFactoryInterface $encoder, User $user)
     {
         $user->setPassword($encoder->getEncoder($user)->encodePassword($password, null));
+        $user->setConfirmationHash(null);
         $this->em->persist($user);
         $this->em->flush();
     }
